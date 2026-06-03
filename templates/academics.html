@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+% extends 'base.html' %}
 
 {% block content %}
 <div class="project-hero-header">
@@ -7,13 +7,128 @@
 </div>
 
 <div class="dashboard-wrapper">
-    <div class="view-panel glass-card">
-        <h2>📖 Batch Grade Distribution & Analytics</h2>
-        <p class="panel-subtitle">Isolate core exam metrics and cross-reference performance trends.</p>
+    <div class="view-panel glass-card" style="margin-bottom: 25px;">
+        <h2>📊 Batch Grade Distribution & Analytics</h2>
+        <p class="panel-subtitle">Real-time breakdown of engineering performance metrics across score brackets.</p>
         
-        <div style="padding: 40px; text-align: center; color: #7f8c8d;">
-            <p>📊 Academic Distribution Charts and slipping grade alert matrices will render here.</p>
+        <div style="position: relative; height:300px; width:100%; margin-top: 20px;">
+            <canvas id="academicDistributionChart"></canvas>
         </div>
     </div>
+
+    <div class="view-panel glass-card table-panel">
+        <h2>📖 Academic Performance Records</h2>
+        <p class="panel-subtitle">Isolate core exam metrics and cross-reference performance trends.</p>
+        
+        <table id="academicTable" style="margin-top: 15px;">
+            <thead>
+                <tr>
+                    <th>Roll No.</th>
+                    <th>Name</th>
+                    <th>Academic Score</th>
+                    <th>Performance Status</th>
+                </tr>
+            </thead>
+            <tbody id="academicTableBody">
+                </tbody>
+        </table>
+    </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Fetch real-time ranks directly from your existing backend endpoint
+    fetch('/api/rankings')
+        .then(response => response.json())
+        .then(data => {
+            populateAcademicTable(data);
+            renderAcademicChart(data);
+        })
+        .catch(err => console.error("Error loading academic hub data:", err));
+
+    function populateAcademicTable(students) {
+        const tbody = document.getElementById('academicTableBody');
+        tbody.innerHTML = "";
+        
+        if(students.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#7f8c8d;">No student profiles registered yet.</td></tr>`;
+            return;
+        }
+
+        students.forEach(s => {
+            let statusHTML = '';
+            if (s.academic_score >= 85) {
+                statusHTML = '<span style="color: #2ecc71; font-weight: bold;">🌟 Distinction</span>';
+            } else if (s.academic_score >= 60) {
+                statusHTML = '<span style="color: #3498db; font-weight: bold;">✅ First Class</span>';
+            } else {
+                statusHTML = '<span style="color: #e67e22; font-weight: bold;">⚠️ Needs Focus</span>';
+            }
+
+            const row = `
+                <tr>
+                    <td><strong>${s.roll_number}</strong></td>
+                    <td>${s.name}</td>
+                    <td>${s.academic_score}%</td>
+                    <td>${statusHTML}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    }
+
+    function renderAcademicChart(students) {
+        // Categorize data science analytics scores into specific brackets
+        let brackets = { "90%+": 0, "80-89%": 0, "70-79%": 0, "60-69%": 0, "Below 60%": 0 };
+        
+        students.forEach(s => {
+            if (s.academic_score >= 90) brackets["90%+"]++;
+            else if (s.academic_score >= 80) brackets["80-89%"]++;
+            else if (s.academic_score >= 70) brackets["70-79%"]++;
+            else if (s.academic_score >= 60) brackets["60-69%"]++;
+            else brackets["Below 60%"]++;
+        });
+
+        const ctx = document.getElementById('academicDistributionChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(brackets),
+                datasets: [{
+                    label: 'Number of Engineering Candidates',
+                    data: Object.values(brackets),
+                    backgroundColor: [
+                        'rgba(155, 89, 182, 0.6)', // Purple
+                        'rgba(52, 152, 219, 0.6)',  // Blue
+                        'rgba(46, 204, 113, 0.6)',  // Green
+                        'rgba(241, 196, 15, 0.6)',  // Yellow
+                        'rgba(231, 76, 60, 0.6)'    // Red
+                    ],
+                    borderColor: ['#9b59b6', '#3498db', '#2ecc71', '#f1c40f', '#e74c3c'],
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, color: '#bdc3c7' },
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                    },
+                    x: {
+                        ticks: { color: '#bdc3c7' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
