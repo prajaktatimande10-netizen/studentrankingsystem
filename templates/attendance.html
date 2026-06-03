@@ -7,13 +7,76 @@
 </div>
 
 <div class="dashboard-wrapper">
-    <div class="view-panel glass-card" style="border-left: 5px solid #e74c3c;">
+    <!-- Mandatory Threshold Status Banner Card -->
+    <div class="view-panel glass-card" style="border-left: 5px solid #e74c3c; margin-bottom: 25px;">
         <h2>⚠️ Mandatory Threshold Monitoring (Below 75%)</h2>
-        <p class="panel-subtitle">Automated system flagging for students requiring attendance regularisation.</p>
+        <p class="panel-subtitle">Automated system flagging for students requiring attendance regularisation or deficit alerts.</p>
+    </div>
+
+    <!-- Attendance Flagged List Table -->
+    <div class="view-panel glass-card table-panel">
+        <h2>📋 Current Deficit Anomaly Radar</h2>
+        <p class="panel-subtitle">Real-time isolation roster tracking sub-75% attendance brackets.</p>
         
-        <div style="padding: 40px; text-align: center; color: #7f8c8d;">
-            <p>📅 Real-time threshold anomaly lists and consistency tracking loops will render here.</p>
-        </div>
+        <table id="attendanceTable" style="margin-top: 15px; width: 100%;">
+            <thead>
+                <tr>
+                    <th>Roll No.</th>
+                    <th>Name</th>
+                    <th>Attendance Rate</th>
+                    <th>Status Action</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceTableBody">
+                <!-- Populated via Asynchronous API fetching -->
+            </tbody>
+        </table>
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    fetch('/api/rankings')
+        .then(response => response.json())
+        .then(students => {
+            console.log("Debugging Attendance Keys:", students);
+
+            const tbody = document.getElementById('attendanceTableBody');
+            tbody.innerHTML = "";
+            
+            // Filter records by checking 'attendance_score' from the backend API
+            const flaggedStudents = students.filter(s => {
+                // Read from attendance_score or fallbacks, stripping any '%' string symbols
+                const rawAttendance = s.attendance_score !== undefined ? s.attendance_score : (s.attendance || 0);
+                const attendanceNum = parseInt(String(rawAttendance).replace('%', ''), 10);
+                return attendanceNum < 75;
+            });
+            
+            if(flaggedStudents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#2ecc71; padding: 30px; font-weight: bold;">✅ All registered student portfolios clear the 75% baseline.</td></tr>`;
+                return;
+            }
+
+            flaggedStudents.forEach(s => {
+                const studentName = s.name || "Unknown Student";
+                const rollNo = s.roll_number || "N/A";
+                
+                // Extract clean attendance rate values
+                const rawAttendance = s.attendance_score !== undefined ? s.attendance_score : (s.attendance || 0);
+                const cleanAttendance = String(rawAttendance).includes('%') ? rawAttendance : rawAttendance + '%';
+                
+                const row = `
+                    <tr style="background: rgba(231, 76, 60, 0.05);">
+                        <td><strong>${rollNo}</strong></td>
+                        <td>${studentName}</td>
+                        <td style="color: #e74c3c; font-weight: bold;">${cleanAttendance}</td>
+                        <td><span style="background: #e74c3c; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">⚠️ Issue Detainer Warning</span></td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        })
+        .catch(err => console.error("Error reading attendance metrics:", err));
+});
+</script>
 {% endblock %}
