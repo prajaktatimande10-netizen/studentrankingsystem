@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="view-panel">
+    <h2>📊 Performance Analysis Dashboard</h2>
+    <p style="color: #7f8c8d; margin-bottom: 25px;">Visualizing student performance breakdowns across academic metrics and composite scores.</p>
+    
+    <div style="margin-bottom: 30px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">
+        <label for="studentSelector" style="font-weight: bold; color: #34495e; margin-right: 10px;">🔍 Select Student Profile View:</label>
+        <select id="studentSelector" style="padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; width: 250px;">
+            </select>
+    </div>
+
+    <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+        <div class="chart-container" style="flex: 1; min-width: 450px; height: 400px;">
+            <h3 style="color: #34495e; text-align: center;">Batch Overview Comparison</h3>
+            <canvas id="rankingChart"></canvas>
+        </div>
+        
+        <div class="chart-container" style="flex: 1; min-width: 450px; height: 400px;">
+            <h3 style="color: #34495e; text-align: center;">Individual Attribute Balance Profile</h3>
+            <canvas id="radarChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('menuAnalysis').classList.add('active-link');
+</script>
+{% endblock %}
