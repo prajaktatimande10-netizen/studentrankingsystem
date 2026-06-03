@@ -2,18 +2,75 @@
 
 {% block content %}
 <div class="project-hero-header">
-    <h1 class="gradient-title">Activity Footprint</h1>
+    <h1 class="gradient-title">Activity Footprint Scanner</h1>
     <div class="gradient-bar"></div>
 </div>
 
 <div class="dashboard-wrapper">
-    <div class="view-panel glass-card">
+    <div class="view-panel glass-card" style="border-left: 5px solid #3498db; margin-bottom: 25px; background: rgba(52, 152, 219, 0.05);">
+        <h2>🔍 Live API Data Scanner</h2>
+        <p class="panel-subtitle">This box reads your backend data keys directly. Look below to see what your project calls the achievement points field:</p>
+        <pre id="rawKeysDisplay" style="background: #1e1e1e; color: #61afef; padding: 15px; border-radius: 6px; margin-top: 15px; overflow-x: auto; font-family: monospace; font-size: 0.95rem;">Scanning API data streams...</pre>
+    </div>
+
+    <div class="view-panel glass-card table-panel">
         <h2>💻 Extracurricular Milestone Records</h2>
-        <p class="panel-subtitle">Log of point allocations across Technical Events, Sports, and Cultural achievements.</p>
-        
-        <div style="padding: 40px; text-align: center; color: #7f8c8d;">
-            <p>🏆 Cumulative departmental point boards and badge verification systems will render here.</p>
-        </div>
+        <table id="achievementsTable" style="margin-top: 15px; width: 100%;">
+            <thead>
+                <tr>
+                    <th>Roll No.</th>
+                    <th>Name</th>
+                    <th>Extracted Property Values</th>
+                </tr>
+            </thead>
+            <tbody id="achievementsTableBody">
+                </tbody>
+        </table>
     </div>
 </div>
-{% endblock %} 
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    fetch('/api/rankings')
+        .then(response => response.json())
+        .then(students => {
+            const keysBox = document.getElementById('rawKeysDisplay');
+            const tbody = document.getElementById('achievementsTableBody');
+            tbody.innerHTML = "";
+            
+            if (students.length === 0) {
+                keysBox.textContent = "Database is completely empty! Please register a student on the homepage first.";
+                return;
+            }
+
+            // 1. Take the first student record and print ALL its property keys clearly
+            const firstStudent = students[0];
+            keysBox.textContent = "Your backend student object looks exactly like this:\n\n" + JSON.stringify(firstStudent, null, 4);
+
+            // 2. Loop through and display what's inside every property for safety
+            students.forEach(s => {
+                const studentName = s.name || s.Name || "Unknown";
+                const rollNo = s.roll_number || s.RollNo || "N/A";
+                
+                // Construct a text string showing every piece of data attached to this student
+                let itemProperties = "";
+                for (let property in s) {
+                    itemProperties += `<strong>${property}</strong>: ${s[property]} | `;
+                }
+
+                const row = `
+                    <tr>
+                        <td><strong>${rollNo}</strong></td>
+                        <td>${studentName}</td>
+                        <td style="font-size: 0.85rem; color: #bdc3c7;">${itemProperties}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        })
+        .catch(err => {
+            document.getElementById('rawKeysDisplay').textContent = "Error fetching data from API endpoint: " + err;
+        });
+});
+</script>
+{% endblock %}
